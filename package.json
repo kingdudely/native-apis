@@ -4,6 +4,10 @@
 	"main": "lib/index.js",
 	"type": "commonjs",
     "license": "ISC",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/kingdudely/native-apis.git"
+	},
 	"devDependencies": {
 		"node-addon-api": "^8.9.1",
 		"prebuildify": "^6.0.1"
