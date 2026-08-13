@@ -2,13 +2,13 @@
   "targets": [
     {
       "target_name": "native-apis",
-      "sources": ["src/shared/addon.cpp"],
+      "sources": ["src/addon.cpp"],
       "conditions": [
         ["OS=='win'", {
           "sources": [
-            "src/windows/mouse.cpp",
-            "src/windows/keyboard.cpp",
-            "src/windows/virtual_screen.cpp"
+            "src/windows/src/mouse.cpp",
+            "src/windows/src/keyboard.cpp",
+            "src/windows/src/virtual_screen.cpp"
           ],
           "libraries": [
             "setupapi.lib",
@@ -18,10 +18,9 @@
         }],
         ["OS=='linux'", {
           "sources": [
-            "src/linux/uinput.cpp",
-            "src/linux/mouse.cpp",
-            "src/linux/keyboard.cpp",
-            "src/linux/virtual_screen.cpp"
+            "src/linux/src/mouse.cpp",
+            "src/linux/src/keyboard.cpp",
+            "src/linux/src/virtual_screen.cpp"
           ],
           "libraries": [
             "-lX11",
@@ -30,9 +29,9 @@
         }],
         ["OS=='mac'", {
           "sources": [
-            "src/macos/mouse.cpp",
-            "src/macos/keyboard.cpp",
-            "src/macos/virtual_screen.mm"
+            "src/macos/src/mouse.cpp",
+            "src/macos/src/keyboard.cpp",
+            "src/macos/src/virtual_screen.mm"
           ],
           "link_settings": {
             "libraries": [
