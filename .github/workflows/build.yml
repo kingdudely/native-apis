@@ -39,7 +39,7 @@ jobs:
 
       - name: Install Linux X11 headers
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libx11-dev libxrandr-dev
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libxrandr-dev libxtst-dev
 
       - run: npm install
 

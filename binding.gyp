@@ -25,7 +25,8 @@
           ],
           "libraries": [
             "-lX11",
-            "-lXrandr"
+            "-lXrandr",
+            "-lXtst"
           ]
         }],
         ["OS=='mac'", {
