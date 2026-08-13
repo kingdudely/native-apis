@@ -6,9 +6,9 @@
 // "sources" and you're done; the originals stay untouched.
 
 #include <napi.h>
-#include "../shared/include/virtual_screen.hpp"   // CreateVirtualScreen, ResizeVirtualScreen
-#include "../shared/include/mouse.hpp"            // ScrollMouse, SetMouseButton, SetMousePosition, MoveMousePosition
-#include "../shared/include/keyboard.hpp"         // SetKeyboardKey
+#include "shared/include/virtual_screen.hpp"   // CreateVirtualScreen, ResizeVirtualScreen
+#include "shared/include/mouse.hpp"            // ScrollMouse, SetMouseButton, SetMousePosition, MoveMousePosition
+#include "shared/include/keyboard.hpp"         // SetKeyboardKey
 
 // ---- virtual_screen.h -------------------------------------------------
 

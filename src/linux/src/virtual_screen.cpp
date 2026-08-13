@@ -1,4 +1,4 @@
-#include "../../shared/virtual_screen.hpp"
+#include "shared/include/virtual_screen.hpp"
 
 #include <X11/extensions/Xrandr.h>
 #include <X11/Xlib.h>

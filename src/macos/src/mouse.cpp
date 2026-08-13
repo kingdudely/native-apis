@@ -1,4 +1,4 @@
-#include "../../shared/mouse.hpp"
+#include "shared/include/mouse.hpp"
 
 #include <Carbon/Carbon.h>
 #include <cmath>
@@ -6,8 +6,8 @@
 #include <IOKit/hidsystem/IOLLEvent.h>
 #include <IOKit/hidsystem/IOHIDLib.h>
 #include <IOKit/hidsystem/IOHIDParameter.h>
-#include "../include/IOHIDPostEvent.hpp"
-#include "../include/virtual_screen.hpp"
+#include "macos/include/IOHIDPostEvent.hpp"
+#include "macos/include/virtual_screen.hpp"
 
 namespace {
 

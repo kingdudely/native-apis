@@ -1,5 +1,5 @@
-#include "../../shared/keyboard.hpp"
-#include "../include/virtual_screen.hpp"
+#include "shared/include/keyboard.hpp"
+#include "linux/include/virtual_screen.hpp"
 
 #include <X11/Xlib.h>
 #include <X11/keysym.h>

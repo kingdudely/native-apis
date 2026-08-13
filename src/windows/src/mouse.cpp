@@ -1,4 +1,4 @@
-#include "../../shared/mouse.hpp"
+#include "shared/include/mouse.hpp"
 
 #include <windows.h>
 #include <cstdint>
