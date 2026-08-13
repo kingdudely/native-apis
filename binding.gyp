@@ -13,7 +13,8 @@
           "libraries": [
             "setupapi.lib",
             "cfgmgr32.lib",
-            "advapi32.lib"
+            "advapi32.lib",
+            "user32.lib"
           ]
         }],
         ["OS=='linux'", {
