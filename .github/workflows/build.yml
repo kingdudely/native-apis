@@ -31,9 +31,11 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 24
 
@@ -41,13 +43,22 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libx11-dev libxrandr-dev libxtst-dev
 
-      - run: npm install
+      - name: Disable Windows Defender for quicker build timeout
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: Add-MpPreference -ExclusionPath "${{ github.workspace }}"
 
-      - run: npm run build
+      - name: Install NPM build dependencies
+        run: npm install
 
-      - run: test -f prebuilds/${{ matrix.artifact }}/node.napi.node
+      - name: Build NPM module
+        run: npm run build
 
-      - uses: actions/upload-artifact@v4
+      - name: Verify build output
+        run: test -f prebuilds/${{ matrix.artifact }}/node.napi.node
+
+      - name: Upload build output as an artifact
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
           path: prebuilds/${{ matrix.artifact }}
@@ -59,14 +70,17 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
 
-      - uses: actions/download-artifact@v4
+      - name: Download all build output artifacts
+        uses: actions/download-artifact@v4
         with:
           path: prebuilds
           merge-multiple: false
@@ -74,4 +88,5 @@ jobs:
       - name: Show downloaded structure
         run: find prebuilds -type f
 
-      - run: npm publish --provenance --access public
+      - name: Upload all build outputs to NPM
+        run: npm publish --provenance --access public
