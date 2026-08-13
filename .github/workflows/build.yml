@@ -43,7 +43,7 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libx11-dev libxrandr-dev libxtst-dev
 
-      - name: Disable Windows Defender for quicker build timeout
+      - name: Disable Windows Defender for quicker build times
         if: runner.os == 'Windows'
         shell: powershell
         run: Add-MpPreference -ExclusionPath "${{ github.workspace }}"
