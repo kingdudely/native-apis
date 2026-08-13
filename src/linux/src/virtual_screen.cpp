@@ -3,6 +3,7 @@
 #include <X11/extensions/Xrandr.h>
 #include <X11/Xlib.h>
 #include <cstdint>
+#include <string>
 
 namespace {
 
@@ -12,17 +13,18 @@ std::string g_displayName;
 } // namespace
 
 Display* GetX11Display() {
-    std::string currentDisplayName = getenv("DISPLAY");
+    const char* displayEnv = getenv("DISPLAY");
+    std::string currentDisplayName = displayEnv ? displayEnv : "";
 
     if (g_display && currentDisplayName != g_displayName) {
-        // DISPLAY changed since we last opened -- reconnect to the new target.
         XCloseDisplay(g_display);
-        g_displayName = currentDisplayName;
         g_display = nullptr;
     }
 
+    g_displayName = currentDisplayName;
+
     if (!g_display) {
-        g_display = XOpenDisplay(g_displayName);
+        g_display = XOpenDisplay(nullptr);
     }
 
     return g_display;
