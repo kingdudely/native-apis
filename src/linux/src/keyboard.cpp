@@ -100,9 +100,9 @@ inline constexpr std::array<KeySym, 174> kX11KeySymMap = {
 
 } // namespace
 
-void SetKeyboardKey(std::uint8_t code, bool isDown) {
-    if (code >= kX11KeySymMap.size()) return;
-    KeySym keysym = kX11KeySymMap[code];
+void SetKeyboardKey(std::uint8_t codeValue, bool isDown) {
+    if (codeValue >= kX11KeySymMap.size()) return;
+    KeySym keysym = kX11KeySymMap[codeValue];
     if (keysym == NoSymbol) return;
 
     Display* display = GetX11Display();

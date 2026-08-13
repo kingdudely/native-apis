@@ -27,7 +27,7 @@ void ClickWheel(Display* display, unsigned int button, int times) {
 
 } // namespace
 
-void ScrollMouse(std::uint8_t deltaMode, float deltaX, float deltaY) {
+void ScrollMouse(std::uint8_t deltaMode, float deltaX, float deltaY, float deltaZ) {
     Display* display = GetX11Display();
     if (!display) return;
 
