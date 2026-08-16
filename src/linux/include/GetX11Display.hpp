@@ -6,25 +6,25 @@
 #include <X11/Xlib.h>
 
 inline Display* GetX11Display() {
-    static std::mutex mutex;
-    static Display* display = nullptr;
-    static std::string cachedDisplayEnv;
+	static std::mutex mutex;
+	static Display* display = nullptr;
+	static std::string cachedDisplayEnv;
 
-    std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(mutex);
 
-    const char* currentEnv = std::getenv("DISPLAY");
-    std::string currentDisplayStr = currentEnv ? currentEnv : "";
+	const char* currentEnv = std::getenv("DISPLAY");
+	std::string currentDisplayStr = currentEnv ? currentEnv : "";
 
-    // If DISPLAY changed, close the stale connection
-    if (display && currentDisplayStr != cachedDisplayEnv) {
-        XCloseDisplay(display);
-        display = nullptr;
-    }
+	// If DISPLAY changed, close the stale connection
+	if (display && currentDisplayStr != cachedDisplayEnv) {
+		XCloseDisplay(display);
+		display = nullptr;
+	}
 
-    if (!display) {
-        display = XOpenDisplay(nullptr);
-        cachedDisplayEnv = currentDisplayStr;
-    }
+	if (!display) {
+		display = XOpenDisplay(nullptr);
+		cachedDisplayEnv = currentDisplayStr;
+	}
 
-    return display;
+	return display;
 }
