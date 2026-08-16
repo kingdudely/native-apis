@@ -25,6 +25,12 @@ Display* GetX11Display() {
 
     if (!g_display) {
         g_display = XOpenDisplay(nullptr);
+        if (g_display) {
+            int major, minor;
+            if (!XRRQueryVersion(g_display, &major, &minor)) {
+                std::fprintf(stderr, "virtual_screen: RandR extension not available\n");
+            }
+        }
     }
 
     return g_display;

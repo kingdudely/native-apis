@@ -26,6 +26,17 @@ using namespace parsec_vdd;
 //   3. Apply that mode via ChangeDisplaySettingsEx, matching on the
 //      driver's known-good preset (now == our arbitrary size) instead of
 //      hoping CDS accepts an out-of-list custom DEVMODE.
+//
+// Primary-display strategy:
+// The VDD display is never primary by default, so anything that defaults to
+// "the primary display" (capture APIs, some games/fullscreen apps) grabs the
+// real physical monitor instead of the virtual one. SetDisplayAsPrimary()
+// moves the VDD display to (0,0) and re-bases every other attached display
+// by the same offset in a single atomic ChangeDisplaySettingsExW commit,
+// since Windows requires the virtual desktop to stay contiguous. This is
+// called once after creation, and again after every replug in
+// ResizeVirtualScreen(), since removing/re-adding the display resets its
+// primary status back to the physical monitor.
 // -----------------------------------------------------------------------------
 
 namespace {
@@ -87,6 +98,67 @@ bool FindVirtualDisplayDeviceName(wchar_t* outName, DWORD outLen) {
         }
     }
     return false;
+}
+
+// Moves `targetDevice` to (0,0) and re-bases every other attached display by
+// the same offset in one atomic commit, since Windows requires the combined
+// virtual desktop formed by all displays to remain contiguous. This is the
+// same operation the Display Settings UI performs when you tick
+// "Make this my main display".
+bool SetDisplayAsPrimary(const wchar_t* targetDevice) {
+    DEVMODEW targetDm{};
+    targetDm.dmSize = sizeof(targetDm);
+    if (!EnumDisplaySettingsExW(targetDevice, ENUM_CURRENT_SETTINGS, &targetDm, 0)) {
+        std::fprintf(stderr, "virtual_screen: EnumDisplaySettingsEx failed for target\n");
+        return false;
+    }
+
+    if (targetDm.dmPosition.x == 0 && targetDm.dmPosition.y == 0) {
+        // Already primary (or already at the origin) - nothing to do.
+        return true;
+    }
+
+    int dx = -targetDm.dmPosition.x;
+    int dy = -targetDm.dmPosition.y;
+
+    targetDm.dmPosition = {0, 0};
+    targetDm.dmFields = DM_POSITION;
+    LONG rc = ChangeDisplaySettingsExW(targetDevice, &targetDm, nullptr,
+                                        CDS_SET_PRIMARY | CDS_UPDATEREGISTRY | CDS_NORESET,
+                                        nullptr);
+    if (rc != DISP_CHANGE_SUCCESSFUL) {
+        std::fprintf(stderr, "virtual_screen: failed to set primary (err=%ld)\n", rc);
+        return false;
+    }
+
+    // Re-base every other attached display by the inverse offset so the
+    // combined desktop stays contiguous (Windows rejects the commit below
+    // otherwise).
+    DISPLAY_DEVICEW dd{};
+    dd.cb = sizeof(dd);
+    for (DWORD i = 0; EnumDisplayDevicesW(nullptr, i, &dd, 0); ++i) {
+        if (!(dd.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP)) continue;
+        if (wcscmp(dd.DeviceName, targetDevice) == 0) continue;
+
+        DEVMODEW dm{};
+        dm.dmSize = sizeof(dm);
+        if (!EnumDisplaySettingsExW(dd.DeviceName, ENUM_CURRENT_SETTINGS, &dm, 0)) continue;
+
+        dm.dmPosition.x += dx;
+        dm.dmPosition.y += dy;
+        dm.dmFields = DM_POSITION;
+        ChangeDisplaySettingsExW(dd.DeviceName, &dm, nullptr,
+                                  CDS_UPDATEREGISTRY | CDS_NORESET, nullptr);
+    }
+
+    // Commit every pending NORESET change from above atomically.
+    rc = ChangeDisplaySettingsExW(nullptr, nullptr, nullptr, 0, nullptr);
+    if (rc != DISP_CHANGE_SUCCESSFUL) {
+        std::fprintf(stderr, "virtual_screen: failed to commit primary-display change (err=%ld)\n", rc);
+        return false;
+    }
+
+    return true;
 }
 
 bool ApplyMode(std::uint32_t width, std::uint32_t height, std::uint32_t hz = 60) {
@@ -178,6 +250,15 @@ void CreateVirtualScreen() {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
     std::printf("virtual_screen: created display index %d\n", g_displayIdx);
+
+    wchar_t deviceName[64]{};
+    if (FindVirtualDisplayDeviceName(deviceName, 64)) {
+        if (!SetDisplayAsPrimary(deviceName)) {
+            std::fprintf(stderr, "virtual_screen: failed to set VDD display as primary\n");
+        }
+    } else {
+        std::fprintf(stderr, "virtual_screen: could not find VDD device to set as primary\n");
+    }
 }
 
 void ResizeVirtualScreen(std::uint32_t width, std::uint32_t height) {
@@ -195,6 +276,15 @@ void ResizeVirtualScreen(std::uint32_t width, std::uint32_t height) {
 
     if (!ReplugDisplay()) {
         return;
+    }
+
+    // Replugging resets primary status back to the physical monitor, so
+    // reassert it before applying the new mode.
+    wchar_t deviceName[64]{};
+    if (FindVirtualDisplayDeviceName(deviceName, 64)) {
+        if (!SetDisplayAsPrimary(deviceName)) {
+            std::fprintf(stderr, "virtual_screen: failed to re-assert VDD display as primary after replug\n");
+        }
     }
 
     if (!ApplyMode(width, height)) {
