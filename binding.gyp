@@ -10,9 +10,6 @@
             "src/windows/src/keyboard.cpp"
           ],
           "libraries": [
-            "setupapi.lib",
-            "cfgmgr32.lib",
-            "advapi32.lib",
             "user32.lib"
           ]
         }],
@@ -23,7 +20,6 @@
           ],
           "libraries": [
             "-lX11",
-            "-lXrandr",
             "-lXtst"
           ]
         }],
@@ -35,12 +31,12 @@
           "link_settings": {
             "libraries": [
               "-framework Carbon",
-              "-framework Foundation",
-              "-framework CoreGraphics"
+              "-framework CoreGraphics",
+              "-framework IOKit"
             ]
           },
           "xcode_settings": {
-            "OTHER_CFLAGS": ["-ObjC++", "-fobjc-arc"],
+            "OTHER_CFLAGS": [],
             "OTHER_LDFLAGS": []
           }
         }]

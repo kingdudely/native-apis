@@ -8,7 +8,6 @@
 #include <IOKit/hidsystem/IOHIDLib.h>
 #include <IOKit/hidsystem/IOHIDParameter.h>
 #include "macos/include/IOHIDPostEvent.hpp"
-#include "macos/include/virtual_screen.hpp"
 
 namespace {
 

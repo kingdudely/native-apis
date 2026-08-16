@@ -2,10 +2,8 @@
 // would have added screen resizing but too buggy (parsec-vdd windows, cgvirtualdisplay macos, xrandr linux)
 
 #include <napi.h>
-#include "shared/include/mouse.hpp"            // ScrollMouse, SetMouseButton, SetMousePosition, MoveMousePosition
-#include "shared/include/keyboard.hpp"         // SetKeyboardKey
-
-// ---- mouse.h ------------------------------------------------------------
+#include "shared/include/mouse.hpp"
+#include "shared/include/keyboard.hpp"
 
 Napi::Value JS_ScrollMouse(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
@@ -57,15 +55,9 @@ Napi::Value JS_MoveMousePosition(const Napi::CallbackInfo& info) {
     }
     auto dx = info[0].As<Napi::Number>().Int32Value();
     auto dy = info[1].As<Napi::Number>().Int32Value();
-    // NOTE: on macOS this now targets the Karabiner VHID path and is
-    // expected to throw (from inside MoveMousePosition itself) if the
-    // VHID pointing device isn't ready, rather than falling back to
-    // CGEvent — that behavior lives in mouse.mm, not here.
     MoveMousePosition(dx, dy);
     return env.Undefined();
 }
-
-// ---- keyboard.h -----------------------------------------------------
 
 Napi::Value JS_SetKeyboardKey(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
@@ -79,8 +71,6 @@ Napi::Value JS_SetKeyboardKey(const Napi::CallbackInfo& info) {
     SetKeyboardKey(codeValue, isDown);
     return env.Undefined();
 }
-
-// ---- module init ------------------------------------------------------
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
     exports.Set("scrollMouse",     Napi::Function::New(env, JS_ScrollMouse));
