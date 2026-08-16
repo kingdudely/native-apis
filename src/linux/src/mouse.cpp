@@ -1,10 +1,12 @@
 #include "shared/include/mouse.hpp"
-#include "linux/include/virtual_screen.hpp"
+#include "linux/include/GetX11Display.hpp"
 
 #include <X11/Xlib.h>
 #include <X11/extensions/XTest.h>
 #include <cmath>
 #include <cstdint>
+
+// maybe uinput?
 
 namespace {
 

@@ -1,34 +1,9 @@
 // addon.cpp
-//
-// This is a NEW file — it does not modify virtual_screen.h, mouse.h, or
-// keyboard.h. It just #includes them and wraps each free function in a
-// thin N-API (node-addon-api) binding. Add this file to binding.gyp's
-// "sources" and you're done; the originals stay untouched.
+// would have added screen resizing but too buggy (parsec-vdd windows, cgvirtualdisplay macos, xrandr linux)
 
 #include <napi.h>
-#include "shared/include/virtual_screen.hpp"   // CreateVirtualScreen, ResizeVirtualScreen
 #include "shared/include/mouse.hpp"            // ScrollMouse, SetMouseButton, SetMousePosition, MoveMousePosition
 #include "shared/include/keyboard.hpp"         // SetKeyboardKey
-
-// ---- virtual_screen.h -------------------------------------------------
-
-Napi::Value JS_CreateVirtualScreen(const Napi::CallbackInfo& info) {
-    CreateVirtualScreen();
-    return info.Env().Undefined();
-}
-
-Napi::Value JS_ResizeVirtualScreen(const Napi::CallbackInfo& info) {
-    Napi::Env env = info.Env();
-    if (info.Length() < 2 || !info[0].IsNumber() || !info[1].IsNumber()) {
-        Napi::TypeError::New(env, "ResizeVirtualScreen(width: number, height: number)")
-            .ThrowAsJavaScriptException();
-        return env.Undefined();
-    }
-    auto width  = info[0].As<Napi::Number>().Uint32Value();
-    auto height = info[1].As<Napi::Number>().Uint32Value();
-    ResizeVirtualScreen(width, height);
-    return env.Undefined();
-}
 
 // ---- mouse.h ------------------------------------------------------------
 
@@ -108,9 +83,6 @@ Napi::Value JS_SetKeyboardKey(const Napi::CallbackInfo& info) {
 // ---- module init ------------------------------------------------------
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-    exports.Set("createVirtualScreen", Napi::Function::New(env, JS_CreateVirtualScreen));
-    exports.Set("resizeVirtualScreen", Napi::Function::New(env, JS_ResizeVirtualScreen));
-
     exports.Set("scrollMouse",     Napi::Function::New(env, JS_ScrollMouse));
     exports.Set("setMouseButton",  Napi::Function::New(env, JS_SetMouseButton));
     exports.Set("setMousePosition",Napi::Function::New(env, JS_SetMousePosition));

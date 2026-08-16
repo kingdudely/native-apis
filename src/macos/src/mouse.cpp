@@ -1,6 +1,7 @@
 #include "shared/include/mouse.hpp"
 
 #include <Carbon/Carbon.h>
+#include <CoreGraphics/CoreGraphics.h>
 #include <cmath>
 #include <cstdint>
 #include <IOKit/hidsystem/IOLLEvent.h>
@@ -11,24 +12,29 @@
 
 namespace {
 
-static io_connect_t g_hidConnect = MACH_PORT_NULL;
-
 static io_connect_t GetHIDConnect() {
-    if (g_hidConnect != MACH_PORT_NULL) {
-        return g_hidConnect;
+    static io_connect_t hidConnect = MACH_PORT_NULL;
+    
+    if (hidConnect != MACH_PORT_NULL) {
+        return hidConnect;
     }
+
     io_service_t service = IOServiceGetMatchingService(
         kIOMainPortDefault, IOServiceMatching(kIOHIDSystemClass));
     if (service == MACH_PORT_NULL) {
         return MACH_PORT_NULL;
     }
+
+    io_connect_t connect = MACH_PORT_NULL;
     kern_return_t kr = IOServiceOpen(service, mach_task_self(),
-                                      kIOHIDParamConnectType, &g_hidConnect);
+                                      kIOHIDParamConnectType, &connect);
     IOObjectRelease(service);
-    if (kr != KERN_SUCCESS) {
-        g_hidConnect = MACH_PORT_NULL;
+
+    if (kr == KERN_SUCCESS) {
+        hidConnect = connect;
     }
-    return g_hidConnect;
+
+    return hidConnect;
 }
 
 CGPoint CurrentMouseLocation() {
@@ -46,13 +52,6 @@ void PostMouseEvent(CGEventType type, CGPoint location, CGMouseButton button) {
 
 } // namespace
 
-void CleanupHIDConnect() {
-    if (g_hidConnect != MACH_PORT_NULL) {
-        IOServiceClose(g_hidConnect);
-        g_hidConnect = MACH_PORT_NULL;
-    }
-}
-
 void ScrollMouse(std::uint8_t deltaMode, float deltaX, float deltaY, float deltaZ) {
     CGScrollEventUnit unit;
     float scaleX, scaleY;
@@ -63,9 +62,11 @@ void ScrollMouse(std::uint8_t deltaMode, float deltaX, float deltaY, float delta
             break;
         case 2: { // page = one full screen dimension, expressed as N lines
             unit = kCGScrollEventUnitLine;
-            std::uint32_t screenWidth = 0, screenHeight = 0;
-            GetVirtualScreenSize(screenWidth, screenHeight);
-            scaleX = screenWidth  ? static_cast<float>(screenWidth)  : 3.0f;
+            CGRect screenBounds = CGDisplayBounds(CGMainDisplayID());
+            double screenWidth = screenBounds.size.width;
+            double screenHeight = screenBounds.size.height;
+
+            scaleX = screenWidth  ? static_cast<float>(screenWidth) : 3.0f;
             scaleY = screenHeight ? static_cast<float>(screenHeight) : 3.0f;
             break;
         }

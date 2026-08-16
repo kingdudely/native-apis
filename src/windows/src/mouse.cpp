@@ -3,17 +3,6 @@
 #include <windows.h>
 #include <cstdint>
 
-namespace {
-
-// Live current resolution, queried fresh each call -- never goes stale,
-// no listener/thread needed.
-void GetVirtualScreenSize(std::uint32_t& outWidth, std::uint32_t& outHeight) {
-    outWidth = static_cast<std::uint32_t>(GetSystemMetrics(SM_CXSCREEN));
-    outHeight = static_cast<std::uint32_t>(GetSystemMetrics(SM_CYSCREEN));
-}
-
-} // namespace
-
 void ScrollMouse(std::uint8_t deltaMode, float deltaX, float deltaY, float deltaZ) {
     float scaleX, scaleY;
     switch (deltaMode) {
@@ -21,8 +10,8 @@ void ScrollMouse(std::uint8_t deltaMode, float deltaX, float deltaY, float delta
             scaleX = scaleY = 1.0f;
             break;
         case 2: { // page = one full screen dimension
-            std::uint32_t screenWidth = 0, screenHeight = 0;
-            GetVirtualScreenSize(screenWidth, screenHeight);
+            int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+            int screenHeight = GetSystemMetrics(SM_CYSCREEN);
             scaleX = screenWidth  ? static_cast<float>(screenWidth)  : static_cast<float>(WHEEL_DELTA) * 3.0f;
             scaleY = screenHeight ? static_cast<float>(screenHeight) : static_cast<float>(WHEEL_DELTA) * 3.0f;
             break;
@@ -75,12 +64,12 @@ void SetMouseButton(std::uint8_t button, bool isDown) {
 // can't go stale if the resolution changes outside Create/ResizeVirtualScreen.
 // Assumes the VDD is the only display -- origin is always (0,0).
 void SetMousePosition(std::uint32_t absoluteX, std::uint32_t absoluteY) {
-    std::uint32_t screenWidth = 0, screenHeight = 0;
-    GetVirtualScreenSize(screenWidth, screenHeight);
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
     if (!screenWidth || !screenHeight) return;
 
-    LONG normalizedX = MulDiv(absoluteX, 65536, static_cast<int>(screenWidth));
-    LONG normalizedY = MulDiv(absoluteY, 65536, static_cast<int>(screenHeight));
+    LONG normalizedX = MulDiv(absoluteX, 65536, screenWidth);
+    LONG normalizedY = MulDiv(absoluteY, 65536, screenHeight);
 
     INPUT input{};
     input.type = INPUT_MOUSE;

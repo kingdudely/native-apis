@@ -7,8 +7,7 @@
         ["OS=='win'", {
           "sources": [
             "src/windows/src/mouse.cpp",
-            "src/windows/src/keyboard.cpp",
-            "src/windows/src/virtual_screen.cpp"
+            "src/windows/src/keyboard.cpp"
           ],
           "libraries": [
             "setupapi.lib",
@@ -20,8 +19,7 @@
         ["OS=='linux'", {
           "sources": [
             "src/linux/src/mouse.cpp",
-            "src/linux/src/keyboard.cpp",
-            "src/linux/src/virtual_screen.cpp"
+            "src/linux/src/keyboard.cpp"
           ],
           "libraries": [
             "-lX11",
@@ -32,8 +30,7 @@
         ["OS=='mac'", {
           "sources": [
             "src/macos/src/mouse.cpp",
-            "src/macos/src/keyboard.cpp",
-            "src/macos/src/virtual_screen.mm"
+            "src/macos/src/keyboard.cpp"
           ],
           "link_settings": {
             "libraries": [
