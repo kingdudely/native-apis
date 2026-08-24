@@ -33,6 +33,7 @@
 				],
 				"link_settings": {
 					"libraries": [
+						"-framework AppKit",
 						"-framework Carbon",
 						"-framework CoreGraphics",
 						"-framework IOKit"
