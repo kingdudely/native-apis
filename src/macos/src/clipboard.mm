@@ -12,15 +12,10 @@ namespace {
 	void WatchThreadMain() {
 		@autoreleasepool {
 			NSPasteboard* pb = [NSPasteboard generalPasteboard];
-
-			if (@available(macOS 15.4, *)) {
-				pb.accessBehavior = NSPasteboardAccessBehaviorAlwaysAllowed;
-			}
-
 			NSInteger lastCount = pb.changeCount;
 
 			while (g_running.load()) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(150));
+				std::this_thread::sleep_for(std::chrono::milliseconds(67));
 				NSInteger current = pb.changeCount;
 				if (current != lastCount) {
 					lastCount = current;
