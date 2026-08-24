@@ -6,7 +6,8 @@
 			["OS=='win'", {
 				"sources": [
 					"src/windows/src/mouse.cpp",
-					"src/windows/src/keyboard.cpp"
+					"src/windows/src/keyboard.cpp",
+					"src/windows/src/clipboard.cpp"
 				],
 				"libraries": [
 					"user32.lib"
@@ -15,17 +16,20 @@
 			["OS=='linux'", {
 				"sources": [
 					"src/linux/src/mouse.cpp",
-					"src/linux/src/keyboard.cpp"
+					"src/linux/src/keyboard.cpp",
+					"src/linux/src/clipboard.cpp"
 				],
 				"libraries": [
 					"-lX11",
-					"-lXtst"
+					"-lXtst",
+					"-lXfixes"
 				]
 			}],
 			["OS=='mac'", {
 				"sources": [
 					"src/macos/src/mouse.cpp",
-					"src/macos/src/keyboard.cpp"
+					"src/macos/src/keyboard.cpp",
+					"src/macos/src/clipboard.mm"
 				],
 				"link_settings": {
 					"libraries": [

@@ -4,6 +4,48 @@
 #include <napi.h>
 #include "shared/include/mouse.hpp"
 #include "shared/include/keyboard.hpp"
+#include "shared/include/clipboard.hpp"
+
+namespace {
+	Napi::ThreadSafeFunction g_clipboardTsfn;
+
+	void OnClipboardChanged() {
+		g_clipboardTsfn.NonBlockingCall([](Napi::Env env, Napi::Function jsCallback) {
+			jsCallback.Call({});
+		});
+	}
+}
+
+Napi::Value JS_StartClipboardWatch(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    if (info.Length() < 1 || !info[0].IsFunction()) {
+        Napi::TypeError::New(env, "StartClipboardWatch(callback)")
+            .ThrowAsJavaScriptException();
+        return env.Undefined();
+    }
+
+    g_clipboardTsfn = Napi::ThreadSafeFunction::New(
+        env,
+        info[0].As<Napi::Function>(),
+        "ClipboardWatchCallback",
+        0,
+        1
+    );
+
+    StartClipboardWatch(OnClipboardChanged);
+
+    return env.Undefined();
+}
+
+Napi::Value JS_StopClipboardWatch(const Napi::CallbackInfo& info) {
+	Napi::Env env = info.Env();
+	StopClipboardWatch();
+	if (g_clipboardTsfn) {
+		g_clipboardTsfn.Release();
+	}
+	return env.Undefined();
+}
 
 Napi::Value JS_ScrollMouse(const Napi::CallbackInfo& info) {
 	Napi::Env env = info.Env();
@@ -79,6 +121,9 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
 	exports.Set("moveMousePosition", Napi::Function::New(env, JS_MoveMousePosition));
 
 	exports.Set("setKeyboardKey", Napi::Function::New(env, JS_SetKeyboardKey));
+
+	exports.Set("startClipboardWatch", Napi::Function::New(env, JS_StartClipboardWatch));
+	exports.Set("stopClipboardWatch",  Napi::Function::New(env, JS_StopClipboardWatch));
 
 	return exports;
 }
