@@ -1,0 +1,204 @@
+name: Debug native-apis
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            expected_prebuild: darwin-arm64
+          - os: windows-latest
+            expected_prebuild: win32-x64
+          - os: ubuntu-latest
+            expected_prebuild: linux-x64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Runtime information
+        shell: bash --noprofile --norc -euo pipefail {0}
+        run: |
+          echo "=== Runtime ==="
+          node -v
+          npm -v
+          node -p "process.platform"
+          node -p "process.arch"
+          node -p "process.versions.napi"
+          node -p "process.versions.modules"
+          echo
+
+      - name: Fetch native-apis from npm
+        shell: bash --noprofile --norc -euo pipefail {0}
+        run: |
+          echo "=== Installing native-apis from npm ==="
+
+          rm -rf debug-native-apis
+          mkdir debug-native-apis
+          cd debug-native-apis
+
+          npm init -y
+
+          # Install WITHOUT lifecycle scripts first.
+          # This lets us inspect the exact package published to npm.
+          npm install native-apis@1.0.5 --ignore-scripts
+
+      - name: Inspect installed package
+        shell: bash --noprofile --norc -euo pipefail {0}
+        run: |
+          cd debug-native-apis
+
+          echo "=== Installed version ==="
+          node -p "require('./node_modules/native-apis/package.json').version"
+          echo
+
+          echo "=== Package.json ==="
+          cat node_modules/native-apis/package.json
+          echo
+
+          echo "=== Package contents ==="
+          find node_modules/native-apis -maxdepth 4 -type f -print | sort
+          echo
+
+          echo "=== Prebuild contents ==="
+          find node_modules/native-apis/prebuilds -type f -print | sort
+          echo
+
+      - name: Check expected prebuild
+        shell: bash --noprofile --norc -euo pipefail {0}
+        run: |
+          cd debug-native-apis
+
+          PREBUILD="node_modules/native-apis/prebuilds/${{ matrix.expected_prebuild }}/node.napi.node"
+
+          echo "=== Expected prebuild ==="
+          echo "$PREBUILD"
+
+          if [[ ! -f "$PREBUILD" ]]; then
+            echo "::error::Expected prebuild does not exist"
+            exit 1
+          fi
+
+          echo "Prebuild exists:"
+          ls -lh "$PREBUILD"
+
+      - name: Inspect native binary
+        shell: bash --noprofile --norc -euo pipefail {0}
+        run: |
+          cd debug-native-apis
+
+          PREBUILD="node_modules/native-apis/prebuilds/${{ matrix.expected_prebuild }}/node.napi.node"
+
+          echo "=== Binary information ==="
+          file "$PREBUILD"
+
+          echo
+          echo "=== Binary size ==="
+          ls -lh "$PREBUILD"
+
+          echo
+          echo "=== Binary type ==="
+          case "${{ runner.os }}" in
+            macOS)
+              file "$PREBUILD"
+              ;;
+            Linux)
+              file "$PREBUILD"
+              ;;
+            Windows)
+              file "$PREBUILD" || true
+              ;;
+          esac
+
+      - name: Test loading prebuild directly
+        shell: bash --noprofile --norc -euo pipefail {0}
+        run: |
+          cd debug-native-apis
+
+          PREBUILD="./node_modules/native-apis/prebuilds/${{ matrix.expected_prebuild }}/node.napi.node"
+
+          echo "=== Loading prebuild directly ==="
+          echo "$PREBUILD"
+
+          node -e "
+            const addon = require('$PREBUILD');
+            console.log('SUCCESS: native addon loaded');
+            console.log(addon);
+          "
+
+      - name: Test node-gyp-build without install script
+        shell: bash --noprofile --norc -euo pipefail {0}
+        run: |
+          cd debug-native-apis
+
+          echo "=== node-gyp-build resolution ==="
+          node -p "require.resolve('node-gyp-build')"
+          node -p "require('node-gyp-build/package.json').version"
+
+          echo
+          echo "=== node-gyp-build package ==="
+          node -p "require.resolve('node-gyp-build/package.json')"
+
+          echo
+          echo "=== Running node-gyp-build ==="
+
+          DEBUG=* node -e "
+            const build = require('node-gyp-build');
+            const result = build('./node_modules/native-apis');
+            console.log('SELECTED PREBUILD:');
+            console.log(result);
+          "
+
+      - name: Test requiring native-apis
+        shell: bash --noprofile --norc -euo pipefail {0}
+        run: |
+          cd debug-native-apis
+
+          echo "=== Requiring native-apis ==="
+
+          node -e "
+            const nativeApis = require('native-apis');
+            console.log('SUCCESS: native-apis loaded');
+            console.log(nativeApis);
+          "
+
+      - name: Test normal npm install
+        shell: bash --noprofile --norc -euo pipefail {0}
+        run: |
+          echo "=== Testing normal npm install ==="
+
+          rm -rf normal-install
+          mkdir normal-install
+          cd normal-install
+
+          npm init -y
+
+          npm install native-apis@1.0.5 --foreground-scripts
+
+      - name: Verify normal install
+        shell: bash --noprofile --norc -euo pipefail {0}
+        run: |
+          cd normal-install
+
+          echo "=== Final installed package ==="
+          find node_modules/native-apis -maxdepth 4 -type f -print | sort
+
+          echo
+          echo "=== Final require test ==="
+
+          node -e "
+            const nativeApis = require('native-apis');
+            console.log('SUCCESS: normal npm install works');
+            console.log(nativeApis);
+          "
