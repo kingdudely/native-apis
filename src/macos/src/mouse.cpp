@@ -5,36 +5,10 @@
 #include <cmath>
 #include <cstdint>
 #include <IOKit/hidsystem/IOLLEvent.h>
-#include <IOKit/hidsystem/IOHIDLib.h>
-#include <IOKit/hidsystem/IOHIDParameter.h>
-#include "macos/include/IOHIDPostEvent.hpp"
+#include "macos/include/GetHIDConnect.hpp"
+#include "macos/include/PostNXEvent.hpp"
 
 namespace {
-
-static io_connect_t GetHIDConnect() {
-	static io_connect_t hidConnect = MACH_PORT_NULL;
-	
-	if (hidConnect != MACH_PORT_NULL) {
-		return hidConnect;
-	}
-
-	io_service_t service = IOServiceGetMatchingService(
-		kIOMainPortDefault, IOServiceMatching(kIOHIDSystemClass));
-	if (service == MACH_PORT_NULL) {
-		return MACH_PORT_NULL;
-	}
-
-	io_connect_t connect = MACH_PORT_NULL;
-	kern_return_t kr = IOServiceOpen(service, mach_task_self(),
-									kIOHIDParamConnectType, &connect);
-	IOObjectRelease(service);
-
-	if (kr == KERN_SUCCESS) {
-		hidConnect = connect;
-	}
-
-	return hidConnect;
-}
 
 CGPoint CurrentMouseLocation() {
 	CGEventRef event = CGEventCreate(nullptr);
@@ -135,12 +109,8 @@ void MoveMousePosition(std::int32_t deltaX, std::int32_t deltaY) {
 		return;
 	}
 
-	NXEventData ev = {};
-	ev.mouseMove.dx = deltaX;
-	ev.mouseMove.dy = deltaY;
-
-	IOGPoint loc = {0, 0}; // ignored when kIOHIDSetRelativeCursorPosition is set
-
-	IOHIDPostEvent(conn, NX_MOUSEMOVED, loc, &ev, kNXEventDataVersion,
-				NX_NONCOALSESCEDMASK, kIOHIDSetRelativeCursorPosition);
+	PostNXEvent(conn, NX_MOUSEMOVED, [&](NXEventData& ev) {
+		ev.mouseMove.dx = deltaX;
+		ev.mouseMove.dy = deltaY;
+	}, NX_NONCOALSESCEDMASK, kIOHIDSetRelativeCursorPosition);
 }
